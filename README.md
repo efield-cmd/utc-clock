@@ -1,12 +1,13 @@
-# UTC to Central Time Dial
+# UTC to Local Time Dial
 
-A lightweight, dedicated desktop web app designed for converting game/event UTC times into local Central Time (Little Rock, Arkansas) with an Apple iOS timer-style interactive ruler dial.
+A lightweight, dedicated web app designed for converting game/event UTC times into a users local time with an interactive ruler dial.
 
 ## Features
-- **Apple iOS Timer-Style Dial**: Smoothly drag or scroll left and right to dial in UTC hours and minutes.
-- **Accurate Central Time (Little Rock) Conversion**:
-  - Automatically handles Daylight Saving Time (**CST** `UTC-6` vs **CDT** `UTC-5`).
+- **Rule-Style Dial**: Smoothly drag or scroll left and right to dial in UTC hours and minutes.
+- **Accurate User-based Time Conversion**:
+  - Automatically handles Daylight Saving Time.
   - Displays day offset tags (`SAME DAY`, `PREVIOUS DAY`, `NEXT DAY`).
+  - Can auto-detect your timezone or be chosen manually
 - **Flexible Controls**:
   - Drag the dial left/right with mouse, touch, or trackpad to desired time.
   - Mouse wheel / trackpad scroll for fine adjustments.
@@ -15,18 +16,3 @@ A lightweight, dedicated desktop web app designed for converting game/event UTC 
   - "Type Time" button or click on the dialed time to directly type 24h times (e.g. `16:00`, `9:30`, or `0400`).
   - "Set to Current UTC" button for instant synchronization with current game time.
   - Quick game reset presets (`00:00 UTC`, `04:00 UTC`, `12:00 UTC`, `16:00 UTC`, `20:00 UTC`).
-
-## How to Run
-
-### Method 1: Open Directly in Any Browser
-Double-click `index.html` or open it in your favorite browser:
-```bash
-open /Users/elias/.gemini/antigravity/scratch/utc-central-clock/index.html
-```
-
-### Method 2: Run via Local Server
-```bash
-cd /Users/elias/.gemini/antigravity/scratch/utc-central-clock
-python3 -m http.server 4321
-```
-Then visit `http://localhost:4321`.
