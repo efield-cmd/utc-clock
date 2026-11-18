@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Guild UTC Time Dial</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UTC Dial">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%2314161d%22/><circle cx=%2250%22 cy=%2250%22 r=%2235%22 fill=%22none%22 stroke=%22%23ff9500%22 stroke-width=%228%22/><line x1=%2250%22 y1=%2250%22 x2=%2250%22 y2=%2225%22 stroke=%22%23ff9500%22 stroke-width=%228%22 stroke-linecap=%22round%22/><line x1=%2250%22 y1=%2250%22 x2=%2268%22 y2=%2250%22 stroke=%22%23ffffff%22 stroke-width=%228%22 stroke-linecap=%22round%22/></svg>">
+  <style>
+    :root {
+      --bg-color: #0b0c10;
+      --card-bg: #14161d;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-orange: #ff9500;
+      --accent-dim: #7c4400;
+      --text-main: #ffffff;
+      --text-muted: #8e8e93;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 15%, #1d202d 0%, var(--bg-color) 85%);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .app-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #34c759;
+      box-shadow: 0 0 8px #34c759;
+    }
+
+    /* Timezone Selector Button / Badge */
+    .tz-picker-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 149, 0, 0.14);
+      color: var(--accent-orange);
+      border: 1px solid rgba(255, 149, 0, 0.35);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 0.3px;
+    }
+
+    .tz-picker-btn:hover {
+      background: rgba(255, 149, 0, 0.24);
+      border-color: rgba(255, 149, 0, 0.6);
+    }
+
+    .tz-picker-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Result Card (Local Time) */
+    .local-card {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(28, 30, 42, 0.95) 0%, rgba(18, 20, 28, 0.98) 100%);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .local-label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .local-zone-name {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .local-time-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .local-time {
+      font-size: 52px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.05;
+    }
+
+    .local-period {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-orange);
+    }
+
+    .local-subtext {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .day-diff-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #e5e5ea;
+      letter-spacing: 0.5px;
+    }
+
+    /* Dial Widget Card (iOS Timer Style) */
+    .dial-card {
+      width: 100%;
+      background: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 36px;
+      padding: 20px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.7);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dial-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 6px 10px;
+    }
+
+    .dial-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .quick-pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      border: none;
+      padding: 4px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .quick-pill:active {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* iOS Ruler / Dial Viewport */
+    .ruler-container {
+      position: relative;
+      width: 100%;
+      height: 115px;
+      overflow: hidden;
+      cursor: grab;
+      touch-action: pan-y;
+    }
+
+    .ruler-container:active {
+      cursor: grabbing;
+    }
+
+    .ruler-fade-left, .ruler-fade-right {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 70px;
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    .ruler-fade-left {
+      left: 0;
+      background: linear-gradient(to right, #000 15%, rgba(0,0,0,0) 100%);
+    }
+
+    .ruler-fade-right {
+      right: 0;
+      background: linear-gradient(to left, #000 15%, rgba(0,0,0,0) 100%);
+    }
+
+    .center-indicator {
+      position: absolute;
+      left: 50%;
+      bottom: 6px;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .indicator-arrow {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 8px solid var(--accent-orange);
+    }
+
+    .indicator-line {
+      width: 2.5px;
+      height: 48px;
+      background: var(--accent-orange);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255, 149, 0, 0.8);
+      position: absolute;
+      top: -54px;
+      left: calc(50% - 1.25px);
+    }
+
+    #rulerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Bottom row in Dial: UTC Big readout & Snap buttons */
+    .dial-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 10px 8px 4px;
+      margin-top: 4px;
+    }
+
+    .utc-action-btn {
+      background: rgba(255, 149, 0, 0.16);
+      color: var(--accent-orange);
+      border: 1px solid rgba(255, 149, 0, 0.3);
+      padding: 9px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .utc-action-btn:hover {
+      background: rgba(255, 149, 0, 0.25);
+    }
+
+    .utc-action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .utc-display-wrap {
+      text-align: right;
+    }
+
+    .utc-time-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .utc-big-time {
+      font-size: 42px;
+      font-weight: 600;
+      color: var(--accent-orange);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      letter-spacing: -0.5px;
+      cursor: pointer;
+    }
+
+    .utc-big-time:hover {
+      text-decoration: underline dotted;
+    }
+
+    /* Quick Game Reset Presets */
+    .shortcuts-bar {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      padding: 4px 0 6px;
+    }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: #ddd;
+      padding: 7px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .chip-btn:hover {
+      background: rgba(255, 255, 255, 0.13);
+      color: #fff;
+    }
+
+    .chip-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: #191b24;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 26px;
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 24px 50px rgba(0,0,0,0.8);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-box h3 {
+      font-size: 17px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-input {
+      background: #000;
+      border: 1px solid rgba(255, 149, 0, 0.4);
+      color: var(--accent-orange);
+      font-size: 32px;
+      text-align: center;
+      padding: 12px;
+      border-radius: 16px;
+      outline: none;
+      font-weight: bold;
+      width: 100%;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 14px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .btn-set {
+      background: var(--accent-orange);
+      color: #000;
+    }
+
+    /* Timezone selection list */
+    .tz-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .tz-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px 14px;
+      border-radius: 12px;
+      color: #e5e5ea;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .tz-item:hover {
+      background: rgba(255, 149, 0, 0.15);
+      border-color: rgba(255, 149, 0, 0.4);
+      color: #fff;
+    }
+
+    .tz-item.active {
+      background: rgba(255, 149, 0, 0.25);
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+      font-weight: 600;
+    }
+
+    .tz-item-name {
+      font-weight: 600;
+    }
+
+    .tz-item-offset {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .tz-item.active .tz-item-offset {
+      color: var(--accent-orange);
+    }
+
+    .detect-loc-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .detect-loc-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .footer-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-bar">
+      <div class="app-title">
+        <span class="live-dot"></span>
+        <span>Guild UTC Dial</span>
+      </div>
+      
+      <!-- Timezone Switcher Button -->
+      <button class="tz-picker-btn" id="tzPickerBtn" title="Change your local time zone">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        <span id="selectedTzLabel">Central (Little Rock)</span>
+        <span style="font-size: 10px; opacity: 0.7;">▼</span>
+      </button>
+    </div>
+
+    <!-- Output: Local Time in Selected Timezone -->
+    <div class="local-card">
+      <div class="local-label">
+        <span id="cardZoneHeading">Your Local Time</span>
+        <span id="dateOffsetTag" class="day-diff-tag">TODAY</span>
+      </div>
+      <div class="local-time-wrap">
+        <span class="local-time" id="localTimeDisplay">10:00</span>
+        <span class="local-period" id="localPeriodDisplay">AM</span>
+      </div>
+      <div class="local-subtext" id="localDetailDisplay">
+        UTC-6 • Central Standard Time (CST)
+      </div>
+    </div>
+
+    <!-- Input Dial: UTC dialer matching Apple Timer dial style -->
+    <div class="dial-card">
+      <div class="dial-header">
+        <span class="dial-title">UTC Time Input</span>
+        <button class="quick-pill" id="currentUtcBtn">Set to Current UTC</button>
+      </div>
+
+      <!-- Ruler Dial Viewport -->
+      <div class="ruler-container" id="rulerContainer">
+        <div class="ruler-fade-left"></div>
+        <div class="ruler-fade-right"></div>
+        <div class="center-indicator">
+          <div class="indicator-line"></div>
+          <div class="indicator-arrow"></div>
+        </div>
+        <canvas id="rulerCanvas"></canvas>
+      </div>
+
+      <div class="dial-footer">
+        <button class="utc-action-btn" id="typeTimeBtn" title="Direct input">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Type Time
+        </button>
+
+        <div class="utc-display-wrap">
+          <div class="utc-time-label">Dialed UTC</div>
+          <div class="utc-big-time" id="utcBigDisplay" title="Click to type exact time">16:00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Reset Presets -->
+    <div class="shortcuts-bar">
+      <button class="chip-btn" data-minutes="0">00:00 UTC (Reset)</button>
+      <button class="chip-btn" data-minutes="240">04:00 UTC</button>
+      <button class="chip-btn" data-minutes="720">12:00 UTC (Noon)</button>
+      <button class="chip-btn" data-minutes="960">16:00 UTC</button>
+      <button class="chip-btn" data-minutes="1200">20:00 UTC</button>
+    </div>
+
+    <div class="footer-note">
+      Drag dial left/right or scroll to desired time.<br>
+      Top Time Display shows what the UTC time translates to in your chosen time zone.<br>
+      Timezone preference is saved automatically to this device.
+    </div>
+  </div>
+
+  <!-- Timezone Picker Modal -->
+  <div class="modal-overlay" id="tzModalOverlay">
+    <div class="modal-box">
+      <h3>
+        <span>Choose Your Timezone</span>
+        <span style="font-size: 13px; font-weight: normal; color: var(--text-muted); cursor: pointer;" id="closeTzX">✕</span>
+      </h3>
+      <button class="detect-loc-btn" id="autoDetectTzBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 12 8"/></svg>
+        Auto-Detect My Device Timezone
+      </button>
+      <div class="tz-list" id="tzListContainer">
+        <!-- populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Direct Time Input Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h3>Enter UTC Time (24h)</h3>
+      <input type="text" id="manualTimeInput" class="modal-input" placeholder="16:00" maxlength="5" autofocus>
+      <div style="font-size: 12px; color: var(--text-muted); text-align: center;">e.g. 16:00 or 9:30 or 0400</div>
+      <div class="modal-buttons">
+        <button class="modal-btn btn-cancel" id="btnCancel">Cancel</button>
+        <button class="modal-btn btn-set" id="btnApply">Set Dial</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Supported / Common Gamer Timezones list
+    const TIMEZONES = [
+      { id: 'America/Chicago', label: 'US Central (CST / CDT)', city: 'Little Rock / Dallas / Chicago' },
+      { id: 'America/New_York', label: 'US Eastern (EST / EDT)', city: 'New York / Atlanta / Miami' },
+      { id: 'America/Denver', label: 'US Mountain (MST / MDT)', city: 'Denver / Phoenix / Calgary' },
+      { id: 'America/Los_Angeles', label: 'US Pacific (PST / PDT)', city: 'Los Angeles / Seattle / Vancouver' },
+      { id: 'America/Anchorage', label: 'US Alaska (AKST)', city: 'Anchorage' },
+      { id: 'Pacific/Honolulu', label: 'US Hawaii (HST)', city: 'Honolulu' },
+      { id: 'America/Sao_Paulo', label: 'Brazil (BRT)', city: 'São Paulo / Rio' },
+      { id: 'Europe/London', label: 'UK / Ireland (GMT / BST)', city: 'London / Dublin' },
+      { id: 'Europe/Paris', label: 'Central Europe (CET / CEST)', city: 'Paris / Berlin / Rome / Madrid' },
+      { id: 'Europe/Helsinki', label: 'Eastern Europe (EET)', city: 'Helsinki / Athens / Bucharest' },
+      { id: 'Asia/Dubai', label: 'Gulf (GST)', city: 'Dubai' },
+      { id: 'Asia/Kolkata', label: 'India (IST)', city: 'Delhi / Mumbai' },
+      { id: 'Asia/Singapore', label: 'Singapore / Malaysia / Manila (SGT)', city: 'Singapore / Manila' },
+      { id: 'Asia/Tokyo', label: 'Japan / Korea (JST / KST)', city: 'Tokyo / Seoul' },
+      { id: 'Australia/Sydney', label: 'Australia Eastern (AEST / AEDT)', city: 'Sydney / Melbourne' },
+      { id: 'Australia/Perth', label: 'Australia Western (AWST)', city: 'Perth' },
+      { id: 'Pacific/Auckland', label: 'New Zealand (NZST / NZDT)', city: 'Auckland' }
+    ];
+
+    // Read stored timezone from localStorage, fallback to device tz or America/Chicago
+    function getSavedTimezone() {
+      const stored = localStorage.getItem('guild_time_dial_tz');
+      if (stored) return stored;
+      
+      try {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (detected) return detected;
+      } catch (e) {}
+
+      return 'America/Chicago';
+    }
+
+    function saveTimezone(tzId) {
+      localStorage.setItem('guild_time_dial_tz', tzId);
+      currentTimezone = tzId;
+      updateTimezoneLabels();
+      updateOutputs();
+      renderTzList();
+    }
+
+    let currentTimezone = getSavedTimezone();
+    let totalMinutes = 16 * 60; // default 16:00 UTC
+
+    const canvas = document.getElementById('rulerCanvas');
+    const ctx = canvas.getContext('2d');
+    const rulerContainer = document.getElementById('rulerContainer');
+
+    const localTimeDisplay = document.getElementById('localTimeDisplay');
+    const localPeriodDisplay = document.getElementById('localPeriodDisplay');
+    const localDetailDisplay = document.getElementById('localDetailDisplay');
+    const dateOffsetTag = document.getElementById('dateOffsetTag');
+    const utcBigDisplay = document.getElementById('utcBigDisplay');
+    const currentUtcBtn = document.getElementById('currentUtcBtn');
+    const typeTimeBtn = document.getElementById('typeTimeBtn');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const manualTimeInput = document.getElementById('manualTimeInput');
+    const btnCancel = document.getElementById('btnCancel');
+    const btnApply = document.getElementById('btnApply');
+    const tzPickerBtn = document.getElementById('tzPickerBtn');
+    const tzModalOverlay = document.getElementById('tzModalOverlay');
+    const closeTzX = document.getElementById('closeTzX');
+    const tzListContainer = document.getElementById('tzListContainer');
+    const autoDetectTzBtn = document.getElementById('autoDetectTzBtn');
+    const selectedTzLabel = document.getElementById('selectedTzLabel');
+    const cardZoneHeading = document.getElementById('cardZoneHeading');
+
+    const PIXELS_PER_MINUTE = 2.4; 
+    let width = 0;
+    let height = 0;
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = rulerContainer.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+      renderRuler();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function minutesToUTCString(mins) {
+      let m = Math.floor(mins) % 1440;
+      if (m < 0) m += 1440;
+      const hh = Math.floor(m / 60);
+      const mm = m % 60;
+      return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    }
+
+    function getTimeConversion(utcMinutes, tz) {
+      let m = Math.floor(utcMinutes) % 1440;
+      if (m < 0) m += 1440;
+      const hh = Math.floor(m / 60);
+      const mm = m % 60;
+
+      const now = new Date();
+      const utcDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hh, mm, 0));
+
+      const dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+        weekday: 'short',
+        timeZoneName: 'short'
+      });
+
+      const parts = dtf.formatToParts(utcDate);
+      let hour = '', minute = '', dayPeriod = '', tzName = '', weekday = '';
+      for (const p of parts) {
+        if (p.type === 'hour') hour = p.value;
+        if (p.type === 'minute') minute = p.value;
+        if (p.type === 'dayPeriod') dayPeriod = p.value.toUpperCase();
+        if (p.type === 'timeZoneName') tzName = p.value;
+        if (p.type === 'weekday') weekday = p.value;
+      }
+
+      // Check day difference relative to UTC day
+      const utcDay = utcDate.getUTCDate();
+      const localDayFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        day: 'numeric'
+      });
+      const localDay = parseInt(localDayFormatter.format(utcDate), 10);
+
+      let dayDifference = 'SAME DAY';
+      if (localDay < utcDay || (localDay > 25 && utcDay === 1)) {
+        dayDifference = 'PREVIOUS DAY';
+      } else if (localDay > utcDay || (utcDay > 25 && localDay === 1)) {
+        dayDifference = 'NEXT DAY';
+      }
+
+      let fullTzName = tz;
+      try {
+        const longDtf = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'long' });
+        const longParts = longDtf.formatToParts(utcDate);
+        const lPart = longParts.find(p => p.type === 'timeZoneName');
+        if (lPart) fullTzName = lPart.value;
+      } catch (e) {}
+
+      return {
+        timeFormatted: `${hour}:${minute}`,
+        period: dayPeriod,
+        dayOffset: dayDifference,
+        tzAbbr: tzName,
+        fullTzName: fullTzName
+      };
+    }
+
+    function updateTimezoneLabels() {
+      const match = TIMEZONES.find(t => t.id === currentTimezone);
+      if (match) {
+        selectedTzLabel.textContent = match.label.split('(')[0].trim();
+        cardZoneHeading.textContent = `Local Time (${match.label.split('(')[0].trim()})`;
+      } else {
+        const simpleName = currentTimezone.split('/').pop().replace('_', ' ');
+        selectedTzLabel.textContent = simpleName;
+        cardZoneHeading.textContent = `Local Time (${simpleName})`;
+      }
+    }
+
+    function updateOutputs() {
+      const normalizedMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+      utcBigDisplay.textContent = minutesToUTCString(normalizedMinutes);
+
+      const conv = getTimeConversion(normalizedMinutes, currentTimezone);
+      localTimeDisplay.textContent = conv.timeFormatted;
+      localPeriodDisplay.textContent = conv.period;
+      localDetailDisplay.textContent = `${conv.tzAbbr} • ${conv.fullTzName}`;
+      
+      dateOffsetTag.textContent = conv.dayOffset;
+      if (conv.dayOffset === 'PREVIOUS DAY') {
+        dateOffsetTag.style.background = 'rgba(255, 69, 58, 0.2)';
+        dateOffsetTag.style.color = '#ff453a';
+      } else if (conv.dayOffset === 'NEXT DAY') {
+        dateOffsetTag.style.background = 'rgba(10, 132, 255, 0.2)';
+        dateOffsetTag.style.color = '#0a84ff';
+      } else {
+        dateOffsetTag.style.background = 'rgba(255, 255, 255, 0.1)';
+        dateOffsetTag.style.color = '#e5e5ea';
+      }
+    }
+
+    function renderRuler() {
+      if (!ctx || width === 0) return;
+      ctx.clearRect(0, 0, width, height);
+
+      const centerX = width / 2;
+      const baseLineY = height - 12;
+
+      const halfVisibleMinutes = (width / 2) / PIXELS_PER_MINUTE;
+      const startMinute = Math.floor(totalMinutes - halfVisibleMinutes) - 2;
+      const endMinute = Math.ceil(totalMinutes + halfVisibleMinutes) + 2;
+
+      for (let m = startMinute; m <= endMinute; m++) {
+        const x = centerX + (m - totalMinutes) * PIXELS_PER_MINUTE;
+        const normM = ((m % 1440) + 1440) % 1440;
+        const isHour = normM % 60 === 0;
+        const isHalfHour = normM % 30 === 0;
+        const isFiveMin = normM % 5 === 0;
+
+        let tickHeight = 14;
+        let tickColor = '#804c00';
+        let tickWidth = 1.2;
+
+        const distFromCenter = Math.abs(x - centerX);
+        const centerProximity = Math.max(0, 1 - distFromCenter / 70);
+
+        if (isHour) {
+          tickHeight = 36;
+          tickWidth = 2.5;
+          tickColor = '#ff9500';
+        } else if (isHalfHour) {
+          tickHeight = 28;
+          tickWidth = 2;
+          tickColor = '#ff9500';
+        } else if (isFiveMin) {
+          tickHeight = 22;
+          tickWidth = 1.8;
+          tickColor = '#d17800';
+        }
+
+        if (centerProximity > 0) {
+          ctx.strokeStyle = '#ff9500';
+          ctx.lineWidth = tickWidth + centerProximity * 0.5;
+        } else {
+          ctx.strokeStyle = tickColor;
+          ctx.lineWidth = tickWidth;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(x, baseLineY);
+        ctx.lineTo(x, baseLineY - tickHeight);
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        if (isHour) {
+          const hour = normM / 60;
+          ctx.save();
+          ctx.font = '600 13px -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif';
+          ctx.fillStyle = centerProximity > 0.4 ? '#ffffff' : 'rgba(255, 149, 0, 0.85)';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${hour}:00`, x, baseLineY - tickHeight - 8);
+          ctx.restore();
+        }
+      }
+    }
+
+    let isDragging = false;
+    let startX = 0;
+    let lastX = 0;
+    let velocity = 0;
+    let animationFrameId = null;
+
+    function onPointerDown(e) {
+      isDragging = true;
+      startX = e.clientX || (e.touches && e.touches[0].clientX);
+      lastX = startX;
+      velocity = 0;
+      cancelAnimationFrame(animationFrameId);
+    }
+
+    function onPointerMove(e) {
+      if (!isDragging) return;
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const deltaX = clientX - lastX;
+      lastX = clientX;
+
+      totalMinutes -= deltaX / PIXELS_PER_MINUTE;
+      velocity = -deltaX / PIXELS_PER_MINUTE;
+
+      updateOutputs();
+      renderRuler();
+    }
+
+    // Snapping logic:
+    // If released within 14 minutes of any hour (:00) or half-hour (:30),
+    // strongly snap magnetic pull to the exact :00 or :30 mark!
+    function getMagneticTarget(mins) {
+      const rounded = Math.round(mins);
+      // Find distance to the nearest half-hour mark (multiples of 30: 0, 30, 60, 90...)
+      const nearestThirty = Math.round(rounded / 30) * 30;
+      const distToThirty = Math.abs(rounded - nearestThirty);
+
+      if (distToThirty <= 14) {
+        return nearestThirty;
+      }
+      return rounded;
+    }
+
+    function snapToNearestMinute() {
+      const target = getMagneticTarget(totalMinutes);
+      const diff = target - totalMinutes;
+      if (Math.abs(diff) > 0.01) {
+        totalMinutes += diff * 0.25;
+        updateOutputs();
+        renderRuler();
+        animationFrameId = requestAnimationFrame(snapToNearestMinute);
+      } else {
+        totalMinutes = target;
+        updateOutputs();
+        renderRuler();
+      }
+    }
+
+    function onPointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+
+      function decelerate() {
+        if (Math.abs(velocity) > 0.05) {
+          totalMinutes += velocity;
+          velocity *= 0.90;
+          updateOutputs();
+          renderRuler();
+          animationFrameId = requestAnimationFrame(decelerate);
+        } else {
+          snapToNearestMinute();
+        }
+      }
+      decelerate();
+    }
+
+    rulerContainer.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp);
+
+    rulerContainer.addEventListener('touchstart', onPointerDown, { passive: true });
+    window.addEventListener('touchmove', onPointerMove, { passive: true });
+    window.addEventListener('touchend', onPointerUp);
+
+    rulerContainer.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY);
+      totalMinutes += (delta * 0.35) / PIXELS_PER_MINUTE;
+      updateOutputs();
+      renderRuler();
+      cancelAnimationFrame(animationFrameId);
+      snapToNearestMinute();
+    }, { passive: false });
+
+    function animateToMinutes(targetMinutes) {
+      cancelAnimationFrame(animationFrameId);
+      targetMinutes = Math.round(targetMinutes);
+      
+      let currentNorm = ((totalMinutes % 1440) + 1440) % 1440;
+      let targetNorm = ((targetMinutes % 1440) + 1440) % 1440;
+      let diff = targetNorm - currentNorm;
+      if (diff > 720) diff -= 1440;
+      if (diff < -720) diff += 1440;
+
+      const finalTarget = totalMinutes + diff;
+      
+      function step() {
+        const stepDiff = finalTarget - totalMinutes;
+        if (Math.abs(stepDiff) > 0.2) {
+          totalMinutes += stepDiff * 0.2;
+          updateOutputs();
+          renderRuler();
+          animationFrameId = requestAnimationFrame(step);
+        } else {
+          totalMinutes = finalTarget;
+          updateOutputs();
+          renderRuler();
+        }
+      }
+      step();
+    }
+
+    document.querySelectorAll('.chip-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mins = parseInt(btn.getAttribute('data-minutes'), 10);
+        animateToMinutes(mins);
+      });
+    });
+
+    currentUtcBtn.addEventListener('click', () => {
+      const now = new Date();
+      const curMins = now.getUTCHours() * 60 + now.getUTCMinutes();
+      animateToMinutes(curMins);
+    });
+
+    // Timezone Modal Logic
+    function renderTzList() {
+      tzListContainer.innerHTML = '';
+      
+      const known = TIMEZONES.some(t => t.id === currentTimezone);
+      let listToRender = [...TIMEZONES];
+      if (!known) {
+        listToRender.unshift({
+          id: currentTimezone,
+          label: currentTimezone.replace('_', ' '),
+          city: 'Custom / Auto-detected'
+        });
+      }
+
+      listToRender.forEach(tz => {
+        const item = document.createElement('div');
+        item.className = `tz-item ${tz.id === currentTimezone ? 'active' : ''}`;
+        item.innerHTML = `
+          <div>
+            <div class="tz-item-name">${tz.label}</div>
+            <div class="tz-item-offset">${tz.city}</div>
+          </div>
+          <div>${tz.id === currentTimezone ? '✓' : ''}</div>
+        `;
+        item.addEventListener('click', () => {
+          saveTimezone(tz.id);
+          tzModalOverlay.style.display = 'none';
+        });
+        tzListContainer.appendChild(item);
+      });
+    }
+
+    tzPickerBtn.addEventListener('click', () => {
+      renderTzList();
+      tzModalOverlay.style.display = 'flex';
+    });
+
+    closeTzX.addEventListener('click', () => {
+      tzModalOverlay.style.display = 'none';
+    });
+
+    tzModalOverlay.addEventListener('click', (e) => {
+      if (e.target === tzModalOverlay) tzModalOverlay.style.display = 'none';
+    });
+
+    autoDetectTzBtn.addEventListener('click', () => {
+      try {
+        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (detected) {
+          saveTimezone(detected);
+          tzModalOverlay.style.display = 'none';
+        }
+      } catch (e) {
+        alert('Could not detect device timezone.');
+      }
+    });
+
+    // Manual Input Modal
+    function openModal() {
+      const norm = ((totalMinutes % 1440) + 1440) % 1440;
+      manualTimeInput.value = minutesToUTCString(norm);
+      modalOverlay.style.display = 'flex';
+      setTimeout(() => {
+        manualTimeInput.focus();
+        manualTimeInput.select();
+      }, 50);
+    }
+
+    function closeModal() {
+      modalOverlay.style.display = 'none';
+    }
+
+    typeTimeBtn.addEventListener('click', openModal);
+    utcBigDisplay.addEventListener('click', openModal);
+    btnCancel.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+
+    function applyManualInput() {
+      const val = manualTimeInput.value.trim().replace('.', ':');
+      let hours = 0, mins = 0;
+
+      if (val.includes(':')) {
+        const parts = val.split(':');
+        hours = parseInt(parts[0], 10);
+        mins = parseInt(parts[1], 10) || 0;
+      } else if (val.length === 3 || val.length === 4) {
+        mins = parseInt(val.slice(-2), 10);
+        hours = parseInt(val.slice(0, -2), 10);
+      } else {
+        hours = parseInt(val, 10);
+        mins = 0;
+      }
+
+      if (!isNaN(hours) && !isNaN(mins)) {
+        hours = ((hours % 24) + 24) % 24;
+        mins = Math.max(0, Math.min(59, mins));
+        animateToMinutes(hours * 60 + mins);
+        closeModal();
+      } else {
+        manualTimeInput.style.borderColor = '#ff453a';
+      }
+    }
+
+    btnApply.addEventListener('click', applyManualInput);
+    manualTimeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') applyManualInput();
+      if (e.key === 'Escape') closeModal();
+    });
+
+    updateTimezoneLabels();
+    resizeCanvas();
+    updateOutputs();
+    renderRuler();
+  </script>
+</body>
+</html>
